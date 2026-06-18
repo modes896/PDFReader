@@ -93,7 +93,7 @@ jobs:
 
       - name: Create final DMG
         env:
-          APP_NAME: HanyPortfolio
+          APP_NAME: PDFReader
         run: |
           APP_PATH=$(find unsigned -maxdepth 3 -name "*.app" | head -n 1)
 
@@ -107,7 +107,7 @@ jobs:
       - name: Sign DMG
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APP_NAME: HanyPortfolio
+          APP_NAME: PDFReader
         run: |
           codesign --force --sign "$APPLE_SIGNING_IDENTITY" "$APP_NAME.dmg"
           codesign --verify --verbose=2 "$APP_NAME.dmg"
@@ -115,7 +115,7 @@ jobs:
       - name: Upload final DMG to release
         env:
           GH_TOKEN: ${{ github.token }}
-          APP_NAME: HanyPortfolio
+          APP_NAME: PDFReader
         run: |
           gh release upload "${{ github.event.release.tag_name }}" \
             "$APP_NAME.dmg" \
