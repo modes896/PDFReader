@@ -1,0 +1,304 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "SF Pro Display", "Segoe UI", sans-serif;
+  color: #f7f7fb;
+  background: #090a0f;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 292px 1fr;
+  height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(122, 92, 255, 0.25), transparent 35%),
+    linear-gradient(135deg, #08090f, #12131c);
+}
+
+.sidebar {
+  height: 100vh;
+  padding: 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 13, 20, 0.78);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #7c5cff, #22d3ee);
+  box-shadow: 0 14px 40px rgba(124, 92, 255, 0.35);
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.brand p {
+  margin: 2px 0 0;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.primaryButton {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: white;
+  background: linear-gradient(135deg, #7c5cff, #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.28);
+}
+
+.primaryButton:hover {
+  filter: brightness(1.08);
+}
+
+.sideSection {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideTitle {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.fileCard {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.055);
+  border-radius: 14px;
+  padding: 12px;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.fileCard span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbnails {
+  overflow: auto;
+  padding-right: 4px;
+  display: grid;
+  gap: 12px;
+}
+
+.thumbnail {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  color: #d1d5db;
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+}
+
+.thumbnail:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.activeThumbnail {
+  outline: 2px solid #7c5cff;
+  background: rgba(124, 92, 255, 0.18);
+}
+
+.thumbCanvas {
+  width: 100%;
+  border-radius: 8px;
+  background: white;
+}
+
+.emptyThumbs {
+  color: #8b93a5;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.main {
+  height: 100vh;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  height: 68px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 11, 17, 0.6);
+  backdrop-filter: blur(18px);
+}
+
+.searchBox {
+  flex: 1;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  color: #8b93a5;
+}
+
+.searchBox input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f7f7fb;
+}
+
+.toolbarGroup {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.toolbarGroup button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  color: #f9fafb;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.toolbarGroup button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.toolbarGroup button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pageBadge,
+.zoomBadge {
+  min-width: 72px;
+  text-align: center;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.viewer {
+  flex: 1;
+  overflow: auto;
+  padding: 32px;
+  scroll-behavior: smooth;
+}
+
+.hero {
+  height: calc(100vh - 132px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  color: #aeb7c8;
+}
+
+.heroIcon {
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+  margin-bottom: 22px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbeafe;
+}
+
+.hero h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 32px;
+  letter-spacing: -0.05em;
+}
+
+.hero p {
+  margin: 10px 0 24px;
+}
+
+.heroButton {
+  width: 180px;
+  margin: 0 auto;
+}
+
+.pageWrap {
+  width: fit-content;
+  margin: 0 auto 36px;
+}
+
+.pageLabel {
+  color: #9ca3af;
+  font-size: 13px;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.pdfCanvas {
+  display: block;
+  background: white;
+  border-radius: 10px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
