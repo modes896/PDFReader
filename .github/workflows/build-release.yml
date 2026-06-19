@@ -6,120 +6,64 @@ on:
       - "v*"
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-sign:
+    name: Build and Sign macOS App
+    runs-on: macos-latest
+
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          version: 10
-          run_install: false
+          node-version: 20
+          cache: npm
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
-      - name: Build Windows binary only
-        run: pnpm tauri build -- --no-bundle
-
-      - name: Upload Windows binary
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            src-tauri/target/release/*.exe
-
-  build-linux:
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            libssl-dev \
-            libgtk-3-dev
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Build Linux app
-        run: pnpm tauri build
-
-      - name: Upload Linux release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/deb/*.deb
-  build-sign:
-    runs-on: macos-latest
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin
-
-      - run: pnpm install --frozen-lockfile
-
-      # Important: do NOT pass APPLE_ID / APPLE_PASSWORD / APPLE_TEAM_ID here.
-      # Otherwise Tauri will try to notarize during build.
-      - name: Build and sign universal macOS app
-        run: pnpm tauri build --target universal-apple-darwin
+      - name: Build Tauri app
+        run: npm run tauri build -- --bundles app
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          CI: true
 
-      - name: Upload signed app
+      - name: Sign app
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          APP_PATH="$(find src-tauri/target/release/bundle/macos -maxdepth 2 -name "*.app" -type d | head -n 1)"
+
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found"
+            exit 1
+          fi
+
+          echo "Signing: $APP_PATH"
+
+          codesign --force --deep --options runtime \
+            --sign "$APPLE_SIGNING_IDENTITY" \
+            "$APP_PATH"
+
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+      - name: Upload signed app artifact
         uses: actions/upload-artifact@v4
         with:
           name: signed-macos-artifacts
-          path: src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+          path: src-tauri/target/release/bundle/macos/*.app
 
   notarize-release:
+    name: Notarize and Release macOS App
     needs: build-sign
     runs-on: macos-latest
+
     permissions:
       contents: write
 
@@ -132,11 +76,22 @@ jobs:
 
       - name: Zip app for notarization
         run: |
-          APP="$(find artifacts -name '*.app' -type d | head -n 1)"
-          echo "APP=$APP" >> "$GITHUB_ENV"
-          ditto -c -k --keepParent "$APP" app-notarize.zip
+          APP_PATH="$(find artifacts -name "*.app" -type d | head -n 1)"
 
-      - name: Notarize app zip
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found"
+            exit 1
+          fi
+
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+          ditto -c -k --keepParent "$APP_PATH" app-notarize.zip
+
+      - name: Notarize app
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           xcrun notarytool submit app-notarize.zip \
             --apple-id "$APPLE_ID" \
@@ -144,18 +99,14 @@ jobs:
             --password "$APPLE_PASSWORD" \
             --wait
 
-          xcrun stapler staple "$APP"
-          xcrun stapler validate "$APP"
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          xcrun stapler staple "$APP_PATH"
+          xcrun stapler validate "$APP_PATH"
 
       - name: Create final app zip
         run: |
-          ditto -c -k --keepParent "$APP" "PDFReader-macOS.app.zip"
+          ditto -c -k --keepParent "$APP_PATH" "FancyPlayer-macOS.app.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: PDFReader-macOS.app.zip
+          files: FancyPlayer-macOS.app.zip
