@@ -104,7 +104,7 @@ jobs:
 
       - name: Create final app zip
         run: |
-          ditto -c -k --keepParent "$APP_PATH" "FancyPlayer-macOS.app.zip"
+          ditto -c -k --keepParent "$APP_PATH" "PDFReader-macOS.app.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
