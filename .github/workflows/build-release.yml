@@ -21,7 +21,7 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
-          APP_PATH="$(find src-tauri/target/release/bundle/macos -maxdepth 2 -name "*.app" -type d | head -n 1)"
+          APP_PATH="$(find src-tauri/target/universal-apple-darwin/release/bundle/macos -maxdepth 2 -name "*.app" -type d | head -n 1)"
 
           if [ -z "$APP_PATH" ]; then
             echo "No .app found"
