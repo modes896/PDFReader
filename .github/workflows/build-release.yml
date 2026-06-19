@@ -23,7 +23,7 @@ jobs:
         run: |
           mkdir -p dist
 
-          gh release download "${{ github.event.release.tag_name }}" \
+          gh release download "${{ github.ref_name }}" \
             --repo "${{ github.repository }}" \
             --pattern "*unsigned*.zip" \
             --dir dist
@@ -34,7 +34,7 @@ jobs:
         run: |
           mkdir -p unsigned
           unzip dist/*unsigned*.zip -d unsigned
-          find unsigned -maxdepth 3 -name "*.app"
+          find unsigned -name "*.app" -type d
 
       - name: Import Apple certificate
         env:
@@ -60,19 +60,29 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
-          APP_PATH=$(find unsigned -maxdepth 3 -name "*.app" | head -n 1)
+          APP_PATH="$(find unsigned -name "*.app" -type d | head -n 1)"
+
+          if [ -z "$APP_PATH" ]; then
+            echo "No .app found"
+            exit 1
+          fi
 
           codesign --force --deep --options runtime \
+            --timestamp \
             --sign "$APPLE_SIGNING_IDENTITY" \
             "$APP_PATH"
 
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
+          mkdir -p signed
+          ditto "$APP_PATH" "signed/$(basename "$APP_PATH")"
+
       - name: Upload signed app artifact
         uses: actions/upload-artifact@v4
         with:
           name: signed-macos-artifacts
-          path: src-tauri/target/release/bundle/macos/*.app
+          path: signed/*.app
+          if-no-files-found: error
 
   notarize-release:
     name: Notarize and Release macOS App
@@ -89,7 +99,7 @@ jobs:
           name: signed-macos-artifacts
           path: artifacts
 
-      - name: Zip app for notarization
+      - name: Prepare app for notarization
         run: |
           APP_PATH="$(find artifacts -name "*.app" -type d | head -n 1)"
 
@@ -121,7 +131,7 @@ jobs:
         run: |
           ditto -c -k --keepParent "$APP_PATH" "PDFReader-macOS.app.zip"
 
-      - name: Create GitHub Release
+      - name: Upload notarized app to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: FancyPlayer-macOS.app.zip
+          files: PDFReader-macOS.app.zip
